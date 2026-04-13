@@ -412,19 +412,12 @@ def load_session(path: str) -> List[Dict[str, Any]]:
 
 def main():
     parser = argparse.ArgumentParser(description='Benchmark context compression quality')
-    parser.add_argument('session', nargs='?', default=None, help='Path to session JSON')
+    parser.add_argument('session', required=True, help='Path to session JSON export')
     parser.add_argument('--sweep', action='store_true', help='Run threshold sweep')
     parser.add_argument('--compare', action='store_true', help='Compare default vs ironin')
     parser.add_argument('--keep', type=int, default=7, help='HIGH threshold')
     parser.add_argument('--drop', type=int, default=4, help='LOW threshold')
     args = parser.parse_args()
-    
-    if not args.session:
-        # Default session path
-        args.session = os.path.expanduser(
-            '~/Library/CloudStorage/Dropbox/Didi-Drap-Shared/Antigua/JH CDAL JHPOA/'
-            'Legal Opinion Action/Mosquito Fogging Injunction/20260411_123746_bde1e0.json'
-        )
     
     messages = load_session(args.session)
     n = len(messages)
