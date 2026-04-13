@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any, Dict
 
 DEFAULTS: Dict[str, Any] = {
-    # Scoring thresholds (used when target_tokens is not set)
+    # Scoring thresholds
     "keep_threshold": 7,       # score >= this -> keep verbatim
     "drop_threshold": 4,       # score < this -> drop or brief mention
     # Pattern detection
@@ -16,8 +16,6 @@ DEFAULTS: Dict[str, Any] = {
     "preserve_tool_integrity": True,  # always maintain tool_call/result pairs
     # Performance
     "skip_scoring_under_msgs": 6,  # don't score if conversation is tiny
-    # Adaptive compression (overrides fixed thresholds when set)
-    "target_tokens": 0,        # target output token budget (0 = use fixed thresholds)
 }
 
 VALID_KEYS = frozenset(DEFAULTS.keys())

@@ -67,7 +67,6 @@ class IroninCompressor(ContextCompressor):
         self._summarize_low = self._sc_config["summarize_low"]
         self._summarize_high = self._sc_config["summarize_high"]
         self._skip_under = self._sc_config["skip_scoring_under_msgs"]
-        self._target_tokens = self._sc_config["target_tokens"]
         self._last_compression_stats: Dict[str, Any] = {}
 
     def _estimate_output_tokens(
@@ -144,8 +143,16 @@ class IroninCompressor(ContextCompressor):
         messages: List[Dict[str, Any]],
         current_tokens: int = None,
         focus_topic: str = None,
+        target_tokens: int = 0,
     ) -> List[Dict[str, Any]]:
-        """Compress using smart scoring instead of blanket summarization."""
+        """Compress using smart scoring instead of blanket summarization.
+        
+        Args:
+            target_tokens: Optional target output token budget. When set (>0),
+                dynamically adjusts keep/drop thresholds to hit this target.
+                Useful for /compress <target> CLI commands.
+                When 0 (default), uses configured keep/drop thresholds.
+        """
         n_messages = len(messages)
         _min_for_compress = self.protect_first_n + 3 + 1
         if n_messages <= _min_for_compress:
@@ -192,18 +199,18 @@ class IroninCompressor(ContextCompressor):
         else:
             raw_scored = [5] * len(region)
         
-        # Adaptive threshold selection if target is set
+        # Adaptive threshold selection if target is passed
         keep_thresh = self._keep_threshold
         drop_thresh = self._drop_threshold
         
-        if self._target_tokens > 0:
+        if target_tokens > 0:
             keep_thresh, drop_thresh = self._find_optimal_thresholds(
-                region, raw_scored, self._target_tokens
+                region, raw_scored, target_tokens
             )
             if not self.quiet_mode:
                 logger.info(
                     "Adaptive thresholds for target %d tokens: keep=%d, drop=%d",
-                    self._target_tokens, keep_thresh, drop_thresh,
+                    target_tokens, keep_thresh, drop_thresh,
                 )
         
         # Classify with chosen thresholds
@@ -309,14 +316,14 @@ class IroninCompressor(ContextCompressor):
             "medium_summarized": len(medium_turns),
             "low_dropped": low_count,
             "tokens_saved_estimate": saved,
-            "target_tokens": self._target_tokens if self._target_tokens > 0 else None,
+            "target_tokens": target_tokens if target_tokens > 0 else None,
             "actual_keep_threshold": keep_thresh,
             "actual_drop_threshold": drop_thresh,
         }
 
         if not self.quiet_mode:
             adaptive_note = ""
-            if self._target_tokens > 0:
+            if target_tokens > 0:
                 adaptive_note = f" (adaptive: keep={keep_thresh}, drop={drop_thresh})"
             logger.info(
                 "Smart compressed: %d -> %d messages (%d HIGH kept, %d MEDIUM summarized, %d LOW dropped, ~%d tokens saved)%s",

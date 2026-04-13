@@ -65,35 +65,24 @@ smart_compressor:
   max_retries_window: 3       # same tool+file within N turns -> collapse (2-10)
   summarize_low: false        # include LOW turns in LLM summary?
   summarize_high: false       # ALSO summarize HIGH turns (for iterative compression safety)
-  target_tokens: 0            # adaptive target: compress to this many tokens (0 = disabled)
   skip_scoring_under_msgs: 6  # don't score tiny conversations (4-20)
 ```
 
-### Adaptive Compression with `target_tokens`
+### Adaptive Compression via `/compress <target>`
 
-When `target_tokens` is set (non-zero), the compressor dynamically adjusts the keep/drop thresholds to hit your target output token budget. This is useful for:
+Pass a target token budget directly to `/compress`:
 
-- **Staying in optimal pricing tiers**: e.g., keep sessions under 200K tokens to avoid higher per-token costs above 256K
-- **Maximum context preservation**: compress to the highest quality level that fits your budget
-- **Iterative compression**: re-run `/compress` with a lower target to reduce further
-
-Example configs:
-
-```yaml
-# Stay in optimal pricing tier (<200K)
-smart_compressor:
-  target_tokens: 200000
-
-# Aggressive: compress to 150K even from 500K session
-smart_compressor:
-  target_tokens: 150000
-
-# Maximum compression: fit into 100K
-smart_compressor:
-  target_tokens: 100000
+```
+/compress            → use default thresholds (keep=7, drop=4)
+/compress 200000     → dynamically find thresholds to hit ~200K output
+/compress 150000     → compress to ~150K output
 ```
 
-The algorithm scores all messages first, then searches for the keep/drop threshold combination that gets closest to the target without exceeding it. Higher thresholds mean more messages get summarized/dropped, lower thresholds mean more kept verbatim.
+The algorithm scores all messages, then searches for the keep/drop threshold combination that gets closest to the target without exceeding it. This is useful for:
+
+- **Staying in optimal pricing tiers**: e.g., compress a 500K session down to <200K to avoid higher per-token costs
+- **Iterative compression**: re-run `/compress` with progressively lower targets
+- **Emergency reduction**: quickly bring a bloated session back to manageable size
 
 ### `summarize_high` — Iterative Compression Safety
 
@@ -153,15 +142,16 @@ Retry loop detection                               No Yes (35 loops)
   Overall info preservation score: 0.7/1.0
 ```
 
-### Adaptive Compression Results (635-message session)
+### Adaptive Compression Results (635-message session, 215K tokens)
 
 | Target | Keep | Drop | HIGH% | MEDIUM% | Output | Savings |
 |--------|------|------|-------|---------|--------|---------|
-| 200K (optimal) | 6 | 2 | 81% | 19% | 194K | 10% |
-| 150K (aggressive) | 8 | 2 | 22% | 78% | 83K | 62% |
-| 100K (maximum) | 8 | 2 | 22% | 78% | 83K | 62% |
+| Default (no target) | 7 | 4 | 57% | 42% | 193K | 10% |
+| `/compress 200000` | 6 | 2 | 81% | 19% | 194K | 10% |
+| `/compress 150000` | 8 | 2 | 22% | 78% | 83K | 62% |
+| `/compress 100000` | 8 | 2 | 22% | 78% | 83K | 62% |
 
-The adaptive system automatically finds the best thresholds for your target. For a 215K session, 200K target barely changes anything (81% verbatim), but 150K target compresses aggressively to 83K (62% savings) while still keeping the highest-value 22% of messages verbatim.
+The adaptive system automatically finds the best thresholds for your target. A 150K target on a 215K session compresses aggressively to 83K (62% savings) while still keeping the highest-value 22% of messages verbatim.
 
 ## Results (tested on 635-message session)
 
