@@ -1,0 +1,5 @@
+name: ironin-compressor
+description: Smart context compressor with heuristic turn scoring, retry loop detection, and configurable importance thresholds
+version: 0.1.0
+author: Cyprian Kowalczyk
+requires_python: ">=3.11"
