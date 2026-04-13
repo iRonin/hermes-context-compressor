@@ -29,7 +29,7 @@ class IroninCompressor(ContextCompressor):
 
     def __init__(
         self,
-        model: str,
+        model: str = "openrouter/anthropic/claude-opus-4.6",
         threshold_percent: float = 0.50,
         protect_first_n: int = 3,
         protect_last_n: int = 20,
