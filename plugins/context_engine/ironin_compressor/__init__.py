@@ -6,30 +6,17 @@ The core library lives in the hermes-context-compressor repo.
 
 from __future__ import annotations
 
-import sys
-import os
-
-# Resolve path: this file is at plugins/context_engine/ironin_compressor/__init__.py
-_plugin_dir = os.path.dirname(os.path.abspath(__file__))
-_plugin_dir = os.path.realpath(_plugin_dir)
-_repo_root = os.path.dirname(os.path.dirname(os.path.dirname(_plugin_dir)))
-if _repo_root not in sys.path:
-    sys.path.insert(0, _repo_root)
-
 from hermes_context_compressor.compressor import IroninCompressor
 
 __version__ = "0.1.0"
 
 
 def _load_smart_compressor_config() -> dict:
-    """Read smart_compressor config from ~/.hermes/config.yaml."""
+    """Read smart_compressor config from the active Hermes profile."""
     try:
-        import yaml
-        config_path = os.path.expanduser("~/.hermes/config.yaml")
-        if os.path.exists(config_path):
-            with open(config_path) as f:
-                cfg = yaml.safe_load(f) or {}
-            return cfg.get("smart_compressor", {})
+        from hermes_cli.config import load_config
+        cfg = load_config()
+        return cfg.get("smart_compressor", {}) or {}
     except Exception:
         pass
     return {}
@@ -44,6 +31,7 @@ def register(ctx) -> None:
 def is_available() -> bool:
     """Lightweight availability check."""
     try:
+        from hermes_context_compressor.compressor import IroninCompressor
         return True
-    except Exception:
+    except ImportError:
         return False

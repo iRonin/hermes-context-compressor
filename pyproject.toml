@@ -11,6 +11,9 @@ requires-python = ">=3.11"
 readme = "README.md"
 license = {text = "MIT"}
 
+[tool.setuptools.packages.find]
+include = ["hermes_context_compressor*"]
+
 [project.optional-dependencies]
 test = ["pytest>=7.0"]
 

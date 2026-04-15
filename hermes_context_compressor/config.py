@@ -40,7 +40,10 @@ def parse_config(raw: Dict[str, Any]) -> Dict[str, Any]:
         if key not in VALID_KEYS:
             continue
         try:
-            val = int(val) if key != "summarize_low" else bool(val)
+            if key in ("summarize_low", "summarize_high", "preserve_tool_integrity"):
+                val = bool(val)
+            else:
+                val = int(val)
         except (TypeError, ValueError):
             continue  # keep default on bad type
         if key in _CLAMPS:
